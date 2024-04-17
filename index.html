@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Scheduling Algorithm</title>
+        <link rel="stylesheet" href="./style.css"/>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <h3>SJFNP</h1>
+        <pre>        
+def main():
+n = int(input("Enter the number of processes: "))
+
+processes = [[0] * 3 for _ in range(n)]
+for i in range(n):
+    print("Enter arrival time for process {}: ".format(i + 1), end="")
+    processes[i][0] = i + 1
+    processes[i][1] = int(input())
+    print("Enter burst time for process {}: ".format(i + 1), end="")
+    processes[i][2] = int(input())
+
+ct = [0] * n
+tat = [0] * n
+wt = [0] * n
+
+c_time = 0
+remaining_processes = processes.copy()
+
+while remaining_processes:
+    arrived_processes = [p for p in remaining_processes if p[1] <= c_time]
+
+    if not arrived_processes:
+        c_time += 1
+        continue
+
+    next_process = min(arrived_processes, key=lambda p: p[2])
+
+    c_time += next_process[2]
+
+    process_index = next_process[0] - 1
+    ct[process_index] = c_time
+    tat[process_index] = ct[process_index] - next_process[1]
+    wt[process_index] = tat[process_index] - next_process[2]
+
+    remaining_processes.remove(next_process)
+
+print("ProcessID\tBurstTime\tArrivalTime\tCompletionTime\tTurnAroundTime\tWaitingTime")
+for i in range(n):
+    print("{}\t\t{}\t\t{}\t\t{}\t\t{}\t\t{}".format(processes[i][0], processes[i][2], processes[i][1],
+                                                       ct[i], tat[i], wt[i]))
+if __name__ == "__main__":
+main()
+        </pre>
+        <h3>SJFP</h3>
+        <pre>
+            def main():
+    n = int(input("Enter the number of processes: "))
+    at = []
+    bt = []
+    ct = [0] * n
+    temp = []
+
+    print("AT    BT")
+    for i in range(n):
+        at_value, bt_value = map(int, input().split())
+        at.append(at_value)
+        bt.append(bt_value)
+        temp.append(bt_value)
+
+    minat = min(at)
+    total = minat
+    count = 0
+
+    while count != n:
+        minbt = 999
+        pos = -1
+
+        for i in range(n):
+            if at[i] <= minat:
+                if bt[i] < minbt:
+                    minbt = bt[i]
+                    pos = i
+
+        if minbt == 999:
+            minbt1 = 999
+            minat1 = 999
+
+            for i in range(n):
+                if bt[i] < minbt1:
+                    if at[i] < minat1:
+                        minat1 = at[i]
+
+            total += minat1 - minat
+            minat = minat1
+            print(f"minat1 {minat}")
+
+        else:
+            bt[pos] -= 1
+            total += 1
+            minat = total
+
+            if bt[pos] == 0:
+                count += 1
+                ct[pos] = total
+                bt[pos] = 999
+
+    print("P\t\tAT\t\tBT\t\tCT\t\tTAT\t\tWT")
+    for i in range(n):
+        print(f"{i+1}\t\t{at[i]}\t\t{temp[i]}\t\t{ct[i]}\t\t{ct[i]-at[i]}\t\t{ct[i]-at[i]-temp[i]}")
+
+
+if __name__ == "__main__":
+    main()
+
+        </pre>
+        <h3>LJFP meenakshi mam version</h3>
+        <pre>
+            from functools import cmp_to_key
+
+
+class Process:
+    def __init__(self, _id, arrival_time, burst_time):
+        self.id = _id
+        self.arrival_time = arrival_time
+        self.burst_time = burst_time
+        self.completion_time = 0
+        self.turnaround_time = 0
+        self.waiting_time = 0
+
+
+def compare_by_arrival_and_burst(a, b):
+    if a.arrival_time == b.arrival_time:
+        return a.burst_time - b.burst_time
+    return a.arrival_time - b.arrival_time
+
+
+def compare_by_burst_and_arrival(a, b):
+    if a.burst_time == b.burst_time:
+        return a.arrival_time - b.arrival_time
+    return b.burst_time - a.burst_time
+
+
+def main():
+    n = int(input("Enter the number of processes: "))
+    processes = []
+    temp_burst_time = {}
+
+    for i in range(n):
+        _id, arrival_time, burst_time = map(int, input().split())
+        processes.append(Process(_id, arrival_time, burst_time))
+        temp_burst_time[_id] = burst_time
+
+    processes.sort(key=cmp_to_key(compare_by_arrival_and_burst))
+    time = processes[0].arrival_time
+    count = 0
+    j = 0
+
+    while count < n:
+        time += 1
+
+        if processes[count].arrival_time < time:
+            processes[count].burst_time -= 1
+
+        if processes[count].burst_time == 0:
+            processes[count].completion_time = time
+            count += 1
+
+        j = count
+        for i in range(count + 1, n):
+            if time >= processes[i].arrival_time:
+                j += 1
+
+        if j != count:
+            temp = processes[count].burst_time
+            for l in range(count, j + 1):
+                if temp < processes[l].burst_time:
+                    temp = processes[l].burst_time
+
+            if temp != processes[count].burst_time:
+                processes[count : j + 1] = sorted(
+                    processes[count : j + 1],
+                    key=cmp_to_key(compare_by_burst_and_arrival),
+                )
+
+    for process in processes:
+        process.turnaround_time = process.completion_time - process.arrival_time
+        process.waiting_time = process.turnaround_time - temp_burst_time[process.id]
+
+    processes.sort(key=cmp_to_key(compare_by_arrival_and_burst))
+
+    print(
+        "Process\t Arrival Time\t Burst Time\t Completion Time\t Turnaround Time\t Waiting Time"
+    )
+    for process in processes:
+        print(
+            f"p{process.id}\t\t{process.arrival_time}\t\t{temp_burst_time[process.id]}\t\t{process.completion_time}\t\t\t{process.turnaround_time}\t\t\t{process.waiting_time}"
+        )
+
+
+if __name__ == "__main__":
+    main()
+        </pre>
+        <h3>Priority Scheduling</h3>
+        <pre>
+            import sys
+
+def swap(a, b):
+    temp = a
+    a = b
+    b = temp
+    return a, b
+
+def main():
+    n = int(input("Enter the number of processes: "))
+
+    at = [0] * 20
+    bt = [0] * 20
+    ft = [0] * 20
+    pn = [0] * 20
+    tat = [0] * 20
+    wt = [0] * 20
+    finished = [0] * 20
+    rm = [0] * 20
+    priority = [0] * 20
+
+    print("Enter AT, BT, and priority of processes: ")
+    for i in range(n):
+        pn[i] = i + 1
+        at[i], bt[i], priority[i] = map(int, input().split())
+        finished[i] = 0
+        rm[i] = bt[i]
+
+    for i in range(n):
+        for j in range(n - i - 1):
+            if at[j] > at[j + 1]:
+                at[j], at[j + 1] = swap(at[j], at[j + 1])
+                bt[j], bt[j + 1] = swap(bt[j], bt[j + 1])
+                pn[j], pn[j + 1] = swap(pn[j], pn[j + 1])
+
+    total_time = at[0]
+    all_fin = 0
+    min_priority = sys.maxsize
+    pos = 0
+    flag = 0
+
+    while not all_fin:
+        min_priority = sys.maxsize
+        flag = 0
+        for j in range(n):
+            if at[j] <= total_time and finished[j] == 0 and priority[j] < min_priority:
+                min_priority = priority[j]
+                pos = j
+                flag = 1
+        if not flag:
+            for i in range(n):
+                if finished[i] == 0:
+                    total_time = at[i]
+                    break
+        else:
+            total_time += 1
+            rm[pos] -= 1
+
+            if rm[pos] == 0:
+                finished[pos] = 1
+                ft[pos] = total_time
+        all_fin = 1
+        for i in range(n):
+            if finished[i] == 0:
+                all_fin = 0
+                break
+
+    total_wt = 0
+    total_tat = 0
+    for i in range(n):
+        tat[i] = ft[i] - at[i]
+        wt[i] = tat[i] - bt[i]
+        total_wt += wt[i]
+        total_tat += tat[i]
+
+    print("\nProcess\tAT\tBT\tPriority\tCT\tTAT\tWT")
+    for i in range(n):
+        print(f"P{pn[i]}\t{at[i]}\t{bt[i]}\t{priority[i]}\t{ft[i]}\t{tat[i]}\t{wt[i]}")
+    print(f"\nAverage TAT: {total_tat / n:.2f}")
+    print(f"Average WT: {total_wt / n:.2f}")
+
+if __name__ == "__main__":
+    main()
+        </pre>
+        <h3>Round Robin</h3>
+        <pre>
+            from collections import deque
+
+class Process:
+    def __init__(self, id, arrival_time, burst_time):
+        self.id = id
+        self.arrival_time = arrival_time
+        self.burst_time = burst_time
+        self.completion_time = 0
+        self.turnaround_time = 0
+        self.waiting_time = 0
+
+def compare(process):
+    return process.arrival_time
+
+n = int(input("enter the no of process :"))
+processes = []
+temp_burst_time = {}
+for i in range(n):
+    id, arrival_time, burst_time = map(int, input().split())
+    processes.append(Process(id, arrival_time, burst_time))
+    temp_burst_time[id] = burst_time
+
+tq = int(input("enter time quantum: "))
+processes.sort(key=compare)
+
+time = processes[0].arrival_time
+count = 0
+j = 1
+q = deque()
+q.append(0)
+while count < n:
+    if q:
+        flag = False
+        i = q.popleft()
+        if processes[i].burst_time <= tq:
+            time += processes[i].burst_time
+            processes[i].completion_time = time
+            processes[i].burst_time = 0
+            count += 1
+            flag = True
+        else:
+            processes[i].burst_time -= tq
+            time += tq
+        for k in range(j, n):
+            if processes[k].arrival_time <= time and processes[k].arrival_time >= time - tq:
+                q.append(k)
+                j += 1
+            else:
+                break
+        if not flag:
+            q.append(i)
+    else:
+        time += tq
+        for k in range(j, n):
+            if processes[k].arrival_time <= time and processes[k].arrival_time >= time - tq:
+                q.append(j)
+                j += 1
+
+for process in processes:
+    process.turnaround_time = process.completion_time - process.arrival_time
+    process.waiting_time = process.turnaround_time - temp_burst_time[process.id]
+
+processes.sort(key=compare)
+
+print("process\t arrival time\t burst time\t completion time\t turn around time\t waiting time")
+for process in processes:
+    print(f" p{process.id}\t\t {process.arrival_time}\t\t {temp_burst_time[process.id]}\t\t {process.completion_time}\t\t\t {process.turnaround_time}\t\t\t {process.waiting_time}")
+        </pre>
+    </body>
+</html>
